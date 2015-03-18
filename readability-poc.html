@@ -6,409 +6,7 @@
   <head>
     <title>Policy making</title>
     <meta name="viewport" content="width=device-width">
-    <script type="text/javascript" src="node_modules/jquery/dist/jquery.js"></script>
-    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/themes/smoothness/jquery-ui.css" />
-    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js"></script>
-    <script type="text/javascript">
-
-    //var $readabilityKeys = ['fleschKincaidReadingEase', 'fleschKincaidGradeLevel' ,'gunningFogScore', 'colemanLiauIndex', 'smogIndex', 'automatedReadabilityIndex'];
-    //var $statisticsKeys = ['textLength', 'letterCount', 'sentenceCount', 'wordCount', 'averageWordsPerSentence'];
-
-    /*var $readability = {
-        fleschKincaidReadingEase : {max : 100, score : , clarification : ''}
-        fleschKincaidGradeLevel : ,
-        gunningFogScore
-    }*/
-    $(document).ready(function(){
-
-
-    // TextStatistics.js
-    // Christopher Giffard (2012)
-    // 1:1 API Fork of TextStatistics.php by Dave Child
-    // https://github.com/DaveChild/Text-Statistics 
-
-        
-        function cleanText(text) {
-            // all these tags should be preceeded by a full stop. 
-            var fullStopTags = ['li', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'dd'];
-            
-            fullStopTags.forEach(function(tag) {
-                text = text.replace("</" + tag + ">",".");
-            })
-            
-            text = text
-                .replace(/<[^>]+>/g, "")                // Strip tags
-                .replace(/[,:;()\-]/, " ")              // Replace commans, hyphens etc (count them as spaces)
-                .replace(/[\.!?]/, ".")                 // Unify terminators
-                .replace(/^\s+/,"")                     // Strip leading whitespace
-                .replace(/[ ]*(\n|\r\n|\r)[ ]*/," ")    // Replace new lines with spaces
-                .replace(/([\.])[\. ]+/,".")            // Check for duplicated terminators
-                .replace(/[ ]*([\.])/,". ")             // Pad sentence terminators
-                .replace(/\s+/," ")                     // Remove multiple spaces
-                .replace(/\s+$/,"");                    // Strip trailing whitespace
-                
-            text += "."; // Add final terminator, just in case it's missing.
-            
-            return text;
-        }
-        
-        var TextStatistics = function TextStatistics(text) {
-            this.text = text ? cleanText(text) : this.text;
-        };
-        
-        TextStatistics.prototype.fleschKincaidReadingEase = function(text) {
-            text = text ? cleanText(text) : this.text;
-            return Math.round((206.835 - (1.015 * this.averageWordsPerSentence(text)) - (84.6 * this.averageSyllablesPerWord(text)))*10)/10;
-        };
-        
-        TextStatistics.prototype.fleschKincaidGradeLevel = function(text) {
-            text = text ? cleanText(text) : this.text;
-            return Math.round(((0.39 * this.averageWordsPerSentence(text)) + (11.8 * this.averageSyllablesPerWord(text)) - 15.59)*10)/10;
-        };
-        
-        TextStatistics.prototype.gunningFogScore = function(text) {
-            text = text ? cleanText(text) : this.text;
-            return Math.round(((this.averageWordsPerSentence(text) + this.percentageWordsWithThreeSyllables(text, false)) * 0.4)*10)/10;
-        };
-        
-        TextStatistics.prototype.colemanLiauIndex = function(text) {
-            text = text ? cleanText(text) : this.text;
-            return Math.round(((5.89 * (this.letterCount(text) / this.wordCount(text))) - (0.3 * (this.sentenceCount(text) / this.wordCount(text))) - 15.8 ) *10)/10;
-        };
-        
-        TextStatistics.prototype.smogIndex = function(text) {
-            text = text ? cleanText(text) : this.text;
-            return Math.round(1.043 * Math.sqrt((this.wordsWithThreeSyllables(text) * (30 / this.sentenceCount(text))) + 3.1291)*10)/10;
-        };
-        
-        TextStatistics.prototype.automatedReadabilityIndex = function(text) {
-            text = text ? cleanText(text) : this.text;
-            return Math.round(((4.71 * (this.letterCount(text) / this.wordCount(text))) + (0.5 * (this.wordCount(text) / this.sentenceCount(text))) - 21.43)*10)/10;
-        };
     
-        TextStatistics.prototype.textLength = function(text) {
-            text = text ? cleanText(text) : this.text;
-            return text.length;
-        };
-        
-        TextStatistics.prototype.letterCount = function(text) {
-            text = text ? cleanText(text) : this.text;
-            text = text.replace(/[^a-z]+/ig,"");
-            return text.length;
-        };
-        
-        TextStatistics.prototype.sentenceCount = function(text) {
-            text = text ? cleanText(text) : this.text;
-            
-            // Will be tripped up by "Mr." or "U.K.". Not a major concern at this point.
-            return text.replace(/[^\.!?]/g, '').length || 1;
-        };
-        
-        TextStatistics.prototype.wordCount = function(text) {
-            text = text ? cleanText(text) : this.text;
-            return text.split(/[^a-z0-9]+/i).length || 1;
-        };
-        
-        TextStatistics.prototype.averageWordsPerSentence = function(text) {
-            text = text ? cleanText(text) : this.text;
-            return this.wordCount(text) / this.sentenceCount(text);
-        };
-        
-        TextStatistics.prototype.averageSyllablesPerWord = function(text) {
-            text = text ? cleanText(text) : this.text;
-            var syllableCount = 0, wordCount = this.wordCount(text), self = this;
-            
-            text.split(/\s+/).forEach(function(word) {
-                syllableCount += self.syllableCount(word);
-            });
-            
-            // Prevent NaN...
-            return (syllableCount||1) / (wordCount||1);
-        };
-        
-        TextStatistics.prototype.wordsWithThreeSyllables = function(text, countProperNouns) {
-            text = text ? cleanText(text) : this.text;
-            var longWordCount = 0, self = this;
-            
-            countProperNouns = countProperNouns === false ? false : true;
-            
-            text.split(/\s+/).forEach(function(word) {
-                
-                // We don't count proper nouns or capitalised words if the countProperNouns attribute is set.
-                // Defaults to true.
-                if (!word.match(/^[A-Z]/) || countProperNouns) {
-                    if (self.syllableCount(word) > 2) longWordCount ++;
-                }
-            });
-            
-            return longWordCount;
-        };
-        
-        TextStatistics.prototype.percentageWordsWithThreeSyllables = function(text, countProperNouns) {
-            text = text ? cleanText(text) : this.text;
-            
-            return (this.wordsWithThreeSyllables(text,countProperNouns) / this.wordCount(text)) * 100;
-        };
-        
-        TextStatistics.prototype.syllableCount = function(word) {
-            var syllableCount = 0,
-                prefixSuffixCount = 0,
-                wordPartCount = 0;
-            
-            // Prepare word - make lower case and remove non-word characters
-            word = word.toLowerCase().replace(/[^a-z]/g,"");
-        
-            // Specific common exceptions that don't follow the rule set below are handled individually
-            // Array of problem words (with word as key, syllable count as value)
-            var problemWords = {
-                "simile":       3,
-                "forever":      3,
-                "shoreline":    2
-            };
-            
-            // Return if we've hit one of those...
-            if (problemWords.hasOwnProperty(word)) return problemWords[word];
-            
-            // These syllables would be counted as two but should be one
-            var subSyllables = [
-                /cial/,
-                /tia/,
-                /cius/,
-                /cious/,
-                /giu/,
-                /ion/,
-                /iou/,
-                /sia$/,
-                /[^aeiuoyt]{2,}ed$/,
-                /.ely$/,
-                /[cg]h?e[rsd]?$/,
-                /rved?$/,
-                /[aeiouy][dt]es?$/,
-                /[aeiouy][^aeiouydt]e[rsd]?$/,
-                /^[dr]e[aeiou][^aeiou]+$/, // Sorts out deal, deign etc
-                /[aeiouy]rse$/ // Purse, hearse
-            ];
-        
-            // These syllables would be counted as one but should be two
-            var addSyllables = [
-                /ia/,
-                /riet/,
-                /dien/,
-                /iu/,
-                /io/,
-                /ii/,
-                /[aeiouym]bl$/,
-                /[aeiou]{3}/,
-                /^mc/,
-                /ism$/,
-                /([^aeiouy])\1l$/,
-                /[^l]lien/,
-                /^coa[dglx]./,
-                /[^gq]ua[^auieo]/,
-                /dnt$/,
-                /uity$/,
-                /ie(r|st)$/
-            ];
-        
-            // Single syllable prefixes and suffixes
-            var prefixSuffix = [
-                /^un/,
-                /^fore/,
-                /ly$/,
-                /less$/,
-                /ful$/,
-                /ers?$/,
-                /ings?$/
-            ];
-        
-            // Remove prefixes and suffixes and count how many were taken
-            prefixSuffix.forEach(function(regex) {
-                if (word.match(regex)) {
-                    word = word.replace(regex,"");
-                    prefixSuffixCount ++;
-                }
-            });
-            
-            wordPartCount = word
-                .split(/[^aeiouy]+/ig)
-                .filter(function(wordPart) {
-                    return !!wordPart.replace(/\s+/ig,"").length
-                })
-                .length;
-            
-            // Get preliminary syllable count...
-            syllableCount = wordPartCount + prefixSuffixCount;
-            
-            // Some syllables do not follow normal rules - check for them
-            subSyllables.forEach(function(syllable) {
-                if (word.match(syllable)) syllableCount --;
-            });
-            
-            addSyllables.forEach(function(syllable) {
-                if (word.match(syllable)) syllableCount ++;
-            });
-            
-            return syllableCount || 1;
-        };
-        
-        function textStatistics(text) {
-            return new TextStatistics(text);
-        }
-        
-
-        //
-
-        function newElement($tag, $classes, $innerHTML, $containerClass){
-            var $containerElement = document.getElementsByClassName($containerClass);
-            console.log($containerElement);
-            var $e = document.createElement($tag);
-            $e.setAttribute('class', $classes);
-            $e.innerHTML = $innerHTML;
-            $containerElement[0].appendChild($e);
-        };
-        var $dependencies = [
-            {tag : 'link', src : '', rel : ''}
-        ]
-        function updateStat($name, $value){
-            var $class = '.' + $name;
-            $($class).find('input').attr('value', $value);
-            $($class).find('.score').html($value);
-        }
-
-        var $b = document.getElementsByTagName('body');
-        console.log($b[0]);
-        var $e = document.createElement('div');
-        $e.setAttribute('class', 'text-stats');
-        $b[0].appendChild($e);
-
-
-        // initialize
-        // --create container element
-        //newElement('div','text-stats','derp','body')
-
-        // --create global variables
-        var $readability ;
-        var $textStatistics;
-        $(document).ready(function(){
-        // --initialise stats
-
-        function updateStats(){
-            $readability;
-            $textStatistics;
-            var $targetText;
-            var $bodyText = $('body > *:not(.text-stats)').text();
-            console.log($targetText);
-            //var $targetText = document.body.textContent;//( $selection != '' ? $selection : $bodyText);
-            var $selection = window.getSelection();
-            $selection = $selection.toString();
-
-            if ( $selection!= '' ) {
-                $targetText = $selection;
-            } else{
-                $targetText = $bodyText;
-            }
-            console.log($targetText);
-
-            var $scoresAndStats = textStatistics($targetText);
-
-            //create readability object
-            $readability = [
-                {
-                    name : 'fleschKincaidReadingEase', 
-                    title : 'Flesh Kincaid reading ease', 
-                    max : 100, 
-                    score : $scoresAndStats.fleschKincaidReadingEase($targetText), 
-                    clarification : ''
-                },
-                {
-                    name : 'fleschKincaidGradeLevel', 
-                    title : 'Flesh Kincaid grade level', 
-                    max : 12, 
-                    score : $scoresAndStats.fleschKincaidGradeLevel($targetText), 
-                    clarification : ''
-                },
-                {
-                    name : 'gunningFogScore',
-                    title : 'Gunning Fog score',
-                    max : 17,
-                    score : $scoresAndStats.gunningFogScore($targetText),
-                    clarification : ''
-                },
-                {
-                    name : 'colemanLiauIndex',
-                    title : 'Coleman Liau index',
-                    max : 12,
-                    score : $scoresAndStats.colemanLiauIndex($targetText),
-                    clarification : ''
-                },
-                {   
-                    name : 'smogIndex', 
-                    title : 'Smog index', 
-                    max : 12, 
-                    score : $scoresAndStats.smogIndex($targetText),
-                    clarification : ''
-                },
-                {
-                    name : 'automatedReadabilityIndex',
-                    title : 'Automated Readability Index',
-                    max : 12,
-                    score : $scoresAndStats.automatedReadabilityIndex($targetText),
-                    clarification : ''
-                }
-            ];
-            $textStatistics = [
-                {name : 'averageWordsPerSentence', title : 'Average words per sentence', stat : $scoresAndStats.averageWordsPerSentence($targetText)},
-                {name : 'wordCount', title : 'Word count', stat : $scoresAndStats.wordCount($targetText)},
-                {name : 'letterCount', title : 'Letter count', stat : $scoresAndStats.letterCount($targetText)},
-                {name : 'sentenceCount', title : 'Sentence count', stat : $scoresAndStats.sentenceCount($targetText)}
-            ];
-
-            var $readabilityLength = $readability.length;
-                for (var $i = 0; $i < $readabilityLength; $i++) {
-                    var $element = document.getElementsByClassName($readability[$i].name);
-                    if( typeof $element[0] === 'undefined' ){
-                        $tag = 'section';
-                        $classes = $readability[$i].name;
-                        $innerHTML = '<h3>' + $readability[$i].title + '<h3> ' + '<input type="range" name="' + $readability[$i].name + '" min="0" max="' + $readability[$i].max + '" value="' + $readability[$i].score + '" disabled="disabled"><span class="score">' + $readability[$i].score + '</span>';
-                        $container = 'text-stats';
-                        newElement($tag, $classes, $innerHTML, $container);
-                    } else {
-                        var $eClass = $readability[$i].name;
-                        var $eValue = $readability[$i].score;
-                        updateStat($eClass, $eValue);
-                        console.log('stats updated');
-                    }
-            }
-            console.log('txtstats fired')
-
-            return $readability;
-            return $textStatistics;
-        }
-        updateStats();
-
-
-
-        var $head = document.getElementsByTagName('head')[0];
-        var $e = document.createElement('link'); 
-        $e.setAttribute('type','text/css'); 
-        $e.setAttribute('rel', 'stylesheet'); 
-        $e.innerHTML = '.derp{display:none;}';
-        $head.appendChild($e);
-
-        var $e = document.createElement('style'); 
-        //e.innerHTML('.txt-stats{height:400px;width:400px;});
-        $head.appendChild($e);
-
-        var $e = document.createElement('link'); 
-        $e.setAttribute('type','text/css'); 
-        $e.setAttribute('rel', 'stylesheet'); 
-        $e.innerHTML = '';
-
-        $(document).bind('keyup mouseup', function(){updateStats()});
-        $('.text-stats').draggable().resizable();
-    });
-});
-</script>
     <style>
     .text-stats{
         display: block;
@@ -431,12 +29,376 @@
 
     </header>
     <main style="position:relative">
-<p>
-     Text mining and text analytics
-The term text analytics describes a set of linguistic, statistical, and machine learning techniques that model and structure the information content of textual sources for business intelligence, exploratory data analysis, research, or investigation.[1] The term is roughly synonymous with text mining; indeed, Ronen Feldman modified a 2000 description of "text mining"[2] in 2004 to describe "text analytics."[3] The latter term is now used more frequently in business settings while "text mining" is used in some of the earliest application areas, dating to the 1980s,[4] notably life-sciences research and government intelligence.
+    <p>
+         Text mining and text analytics
+        The term text analytics describes a set of linguistic, statistical, and machine learning techniques that model and structure the information content of textual sources for business intelligence, exploratory data analysis, research, or investigation.[1] The term is roughly synonymous with text mining; indeed, Ronen Feldman modified a 2000 description of "text mining"[2] in 2004 to describe "text analytics."[3] The latter term is now used more frequently in business settings while "text mining" is used in some of the earliest application areas, dating to the 1980s,[4] notably life-sciences research and government intelligence.
+    </p>
+    <p>
+        The term text analytics also describes that application of text analytics to respond to business problems, whether independently or in conjunction with query and analysis of fielded, numerical data. It is a truism that 80 percent of business-relevant information originates in unstructured form, primarily text.[5] These techniques and processes discover and present knowledge – facts, business rules, and relationships – that is otherwise locked in textual form, impenetrable to automated processing.
+    </p>
+  <footer>
+        <script type="text/javascript" src="node_modules/jquery/dist/jquery.js"></script>
+        <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/themes/smoothness/jquery-ui.css" />
+        <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js"></script>
+        <script type="text/javascript">
 
-The term text analytics also describes that application of text analytics to respond to business problems, whether independently or in conjunction with query and analysis of fielded, numerical data. It is a truism that 80 percent of business-relevant information originates in unstructured form, primarily text.[5] These techniques and processes discover and present knowledge – facts, business rules, and relationships – that is otherwise locked in textual form, impenetrable to automated processing.
-  </p></body>
+        var $head = document.getElementsByTagName('head')[0];
+
+        var $e = document.createElement('script'); 
+        $e.setAttribute('type','text/javascript'); 
+        $e.setAttribute('src', 'https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js'); 
+        $head.appendChild($e);
+        var $e = document.createElement('script'); 
+        $e.setAttribute('type','text/javascript'); 
+        $e.setAttribute('src', 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/jquery-ui.min.js'); 
+        $head.appendChild($e);
+        var $e = document.createElement('link'); 
+        $e.setAttribute('rel','stylesheet'); 
+        $e.setAttribute('href', 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.3/themes/smoothness/jquery-ui.css'); 
+        $head.appendChild($e);
+        var $e = document.createElement('link'); 
+        $e.setAttribute('type','text/css'); 
+        $e.setAttribute('rel', 'stylesheet'); 
+        $e.innerHTML = '.derp{display:none;}';
+        $head.appendChild($e);
+
+            function cleanText(text) {
+                var fullStopTags = ['li', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'dd'];
+                
+                fullStopTags.forEach(function(tag) {
+                    text = text.replace("</" + tag + ">",".");
+                })
+                
+                text = text .replace(/<[^>]+>/g, "") .replace(/[,:;()\-]/, " ") .replace(/[\.!?]/, ".") .replace(/^\s+/,"") .replace(/[ ]*(\n|\r\n|\r)[ ]*/," ") .replace(/([\.])[\. ]+/,".") .replace(/[ ]*([\.])/,". ") .replace(/\s+/," ") .replace(/\s+$/,"");
+                    
+                text += ".";
+                
+                return text;
+            }
+            
+            var TextStatistics = function TextStatistics(text) {
+                this.text = text ? cleanText(text) : this.text;
+            };
+            
+            TextStatistics.prototype.fleschKincaidReadingEase = function(text) {
+                text = text ? cleanText(text) : this.text;
+                return Math.round((206.835 - (1.015 * this.averageWordsPerSentence(text)) - (84.6 * this.averageSyllablesPerWord(text)))*10)/10;
+            };
+            
+            TextStatistics.prototype.fleschKincaidGradeLevel = function(text) {
+                text = text ? cleanText(text) : this.text;
+                return Math.round(((0.39 * this.averageWordsPerSentence(text)) + (11.8 * this.averageSyllablesPerWord(text)) - 15.59)*10)/10;
+            };
+            
+            TextStatistics.prototype.gunningFogScore = function(text) {
+                text = text ? cleanText(text) : this.text;
+                return Math.round(((this.averageWordsPerSentence(text) + this.percentageWordsWithThreeSyllables(text, false)) * 0.4)*10)/10;
+            };
+            
+            TextStatistics.prototype.colemanLiauIndex = function(text) {
+                text = text ? cleanText(text) : this.text;
+                return Math.round(((5.89 * (this.letterCount(text) / this.wordCount(text))) - (0.3 * (this.sentenceCount(text) / this.wordCount(text))) - 15.8 ) *10)/10;
+            };
+            
+            TextStatistics.prototype.smogIndex = function(text) {
+                text = text ? cleanText(text) : this.text;
+                return Math.round(1.043 * Math.sqrt((this.wordsWithThreeSyllables(text) * (30 / this.sentenceCount(text))) + 3.1291)*10)/10;
+            };
+            
+            TextStatistics.prototype.automatedReadabilityIndex = function(text) {
+                text = text ? cleanText(text) : this.text;
+                return Math.round(((4.71 * (this.letterCount(text) / this.wordCount(text))) + (0.5 * (this.wordCount(text) / this.sentenceCount(text))) - 21.43)*10)/10;
+            };
+        
+            TextStatistics.prototype.textLength = function(text) {
+                text = text ? cleanText(text) : this.text;
+                return text.length;
+            };
+            
+            TextStatistics.prototype.letterCount = function(text) {
+                text = text ? cleanText(text) : this.text;
+                text = text.replace(/[^a-z]+/ig,"");
+                return text.length;
+            };
+            
+            TextStatistics.prototype.sentenceCount = function(text) {
+                text = text ? cleanText(text) : this.text;
+                return text.replace(/[^\.!?]/g, '').length || 1;
+            };
+            
+            TextStatistics.prototype.wordCount = function(text) {
+                text = text ? cleanText(text) : this.text;
+                return text.split(/[^a-z0-9]+/i).length || 1;
+            };
+            
+            TextStatistics.prototype.averageWordsPerSentence = function(text) {
+                text = text ? cleanText(text) : this.text;
+                return this.wordCount(text) / this.sentenceCount(text);
+            };
+            
+            TextStatistics.prototype.averageSyllablesPerWord = function(text) {
+                text = text ? cleanText(text) : this.text;
+                var syllableCount = 0, wordCount = this.wordCount(text), self = this;
+                
+                text.split(/\s+/).forEach(function(word) {
+                    syllableCount += self.syllableCount(word);
+                });
+                return (syllableCount||1) / (wordCount||1);
+            };
+            
+            TextStatistics.prototype.wordsWithThreeSyllables = function(text, countProperNouns) {
+                text = text ? cleanText(text) : this.text;
+                var longWordCount = 0, self = this;
+                
+                countProperNouns = countProperNouns === false ? false : true;
+                
+                text.split(/\s+/).forEach(function(word) {
+                    if (!word.match(/^[A-Z]/) || countProperNouns) {
+                        if (self.syllableCount(word) > 2) longWordCount ++;
+                    }
+                });
+                
+                return longWordCount;
+            };
+            
+            TextStatistics.prototype.percentageWordsWithThreeSyllables = function(text, countProperNouns) {
+                text = text ? cleanText(text) : this.text;
+                
+                return (this.wordsWithThreeSyllables(text,countProperNouns) / this.wordCount(text)) * 100;
+            };
+            
+            TextStatistics.prototype.syllableCount = function(word) {
+                var syllableCount = 0,
+                    prefixSuffixCount = 0,
+                    wordPartCount = 0;
+                
+                word = word.toLowerCase().replace(/[^a-z]/g,"");
+                var problemWords = {
+                    "simile":       3,
+                    "forever":      3,
+                    "shoreline":    2
+                };
+                if (problemWords.hasOwnProperty(word)) return problemWords[word];
+                
+                var subSyllables = [
+                    /cial/,
+                    /tia/,
+                    /cius/,
+                    /cious/,
+                    /giu/,
+                    /ion/,
+                    /iou/,
+                    /sia$/,
+                    /[^aeiuoyt]{2,}ed$/,
+                    /.ely$/,
+                    /[cg]h?e[rsd]?$/,
+                    /rved?$/,
+                    /[aeiouy][dt]es?$/,
+                    /[aeiouy][^aeiouydt]e[rsd]?$/,
+                    /^[dr]e[aeiou][^aeiou]+$/,
+                    /[aeiouy]rse$/
+                ];
+            
+                var addSyllables = [
+                    /ia/,
+                    /riet/,
+                    /dien/,
+                    /iu/,
+                    /io/,
+                    /ii/,
+                    /[aeiouym]bl$/,
+                    /[aeiou]{3}/,
+                    /^mc/,
+                    /ism$/,
+                    /([^aeiouy])\1l$/,
+                    /[^l]lien/,
+                    /^coa[dglx]./,
+                    /[^gq]ua[^auieo]/,
+                    /dnt$/,
+                    /uity$/,
+                    /ie(r|st)$/
+                ];
+            
+                var prefixSuffix = [
+                    /^un/,
+                    /^fore/,
+                    /ly$/,
+                    /less$/,
+                    /ful$/,
+                    /ers?$/,
+                    /ings?$/
+                ];
+            
+                prefixSuffix.forEach(function(regex) {
+                    if (word.match(regex)) {
+                        word = word.replace(regex,"");
+                        prefixSuffixCount ++;
+                    }
+                });
+                
+                wordPartCount = word
+                    .split(/[^aeiouy]+/ig)
+                    .filter(function(wordPart) {
+                        return !!wordPart.replace(/\s+/ig,"").length
+                    })
+                    .length;
+                
+                syllableCount = wordPartCount + prefixSuffixCount;
+                
+                subSyllables.forEach(function(syllable) {
+                    if (word.match(syllable)) syllableCount --;
+                });
+                
+                addSyllables.forEach(function(syllable) {
+                    if (word.match(syllable)) syllableCount ++;
+                });
+                
+                return syllableCount || 1;
+            };
+            
+            function textStatistics(text) {
+                return new TextStatistics(text);
+            }
+            
+
+
+            function newElement($tag, $classes, $innerHTML, $containerClass){
+                var $containerElement = document.getElementsByClassName($containerClass);
+                console.log($containerElement);
+                var $e = document.createElement($tag);
+                $e.setAttribute('class', $classes);
+                $e.innerHTML = $innerHTML;
+                $containerElement[0].appendChild($e);
+            };
+            var $dependencies = [
+                {tag : 'link', src : '', rel : ''}
+            ]
+            function updateStat($name, $value){
+                // var $class = '.' + $name;
+                var $class = $name;
+                // $($class).find('input').attr('value', $value);
+                document.getElementsByClassName($class)[0].getElementsByTagName('input')[0].setAttribute('value', $value);
+                document.getElementsByClassName($class)[0].getElementsByClassName('score')[0].innerHTML = $value;
+                // console.log($els.length);
+                // console.log($value);
+                // for($i = $els.length; $i<0; $i--){ 
+                    //$els.getElementsByTagName('input')[0].setAttribute('value', $value); 
+                    //$els[$i].getElementsByClassName('score')[0].innerHTML = $value;  
+                // }
+                // $($class).find('.score').html($value);
+            }
+
+            var $b = document.getElementsByTagName('body');
+            console.log($b[0]);
+            var $e = document.createElement('div');
+            $e.setAttribute('class', 'text-stats');
+            $b[0].appendChild($e);
+
+
+            var $readability ;
+            var $textStatistics;
+
+
+            function updateStats(){
+                $readability;
+                $textStatistics;
+                var $targetText;
+                var $bodyText = document.getElementsByTagName('body')[0].innerHTML;//$('body > *:not(.text-stats)').text();
+                console.log($targetText);
+                var $selection = window.getSelection();
+                $selection = $selection.toString();
+
+                if ( $selection!= '' ) {
+                    $targetText = $selection;
+                } else{
+                    $targetText = $bodyText;
+                }
+                $targetText = $targetText.replace(/<[^>]*>/g, "");
+                console.log($targetText);
+
+                var $scoresAndStats = textStatistics($targetText);
+
+                $readability = [
+                    {
+                        name : 'fleschKincaidReadingEase', 
+                        title : 'Flesh Kincaid reading ease', 
+                        max : 100, 
+                        score : $scoresAndStats.fleschKincaidReadingEase($targetText), 
+                        clarification : ''
+                    },
+                    {
+                        name : 'fleschKincaidGradeLevel', 
+                        title : 'Flesh Kincaid grade level', 
+                        max : 12, 
+                        score : $scoresAndStats.fleschKincaidGradeLevel($targetText), 
+                        clarification : ''
+                    },
+                    {
+                        name : 'gunningFogScore',
+                        title : 'Gunning Fog score',
+                        max : 17,
+                        score : $scoresAndStats.gunningFogScore($targetText),
+                        clarification : ''
+                    },
+                    {
+                        name : 'colemanLiauIndex',
+                        title : 'Coleman Liau index',
+                        max : 12,
+                        score : $scoresAndStats.colemanLiauIndex($targetText),
+                        clarification : ''
+                    },
+                    {   
+                        name : 'smogIndex', 
+                        title : 'Smog index', 
+                        max : 12, 
+                        score : $scoresAndStats.smogIndex($targetText),
+                        clarification : ''
+                    },
+                    {
+                        name : 'automatedReadabilityIndex',
+                        title : 'Automated Readability Index',
+                        max : 12,
+                        score : $scoresAndStats.automatedReadabilityIndex($targetText),
+                        clarification : ''
+                    }
+                ];
+                $textStatistics = [
+                    {name : 'averageWordsPerSentence', title : 'Average words per sentence', stat : $scoresAndStats.averageWordsPerSentence($targetText)},
+                    {name : 'wordCount', title : 'Word count', stat : $scoresAndStats.wordCount($targetText)},
+                    {name : 'letterCount', title : 'Letter count', stat : $scoresAndStats.letterCount($targetText)},
+                    {name : 'sentenceCount', title : 'Sentence count', stat : $scoresAndStats.sentenceCount($targetText)}
+                ];
+
+                var $readabilityLength = $readability.length;
+                    for (var $i = 0; $i < $readabilityLength; $i++) {
+                        var $element = document.getElementsByClassName($readability[$i].name);
+                        if( typeof $element[0] === 'undefined' ){
+                            $tag = 'section';
+                            $classes = $readability[$i].name;
+                            $innerHTML = '<h3>' + $readability[$i].title + '<h3> ' + '<input type="range" name="' + $readability[$i].name + '" min="0" max="' + $readability[$i].max + '" value="' + $readability[$i].score + '" disabled="disabled"><span class="score">' + $readability[$i].score + '</span>';
+                            $container = 'text-stats';
+                            newElement($tag, $classes, $innerHTML, $container);
+                        } else {
+                            var $eClass = $readability[$i].name;
+                            var $eValue = $readability[$i].score;
+                            updateStat($eClass, $eValue);
+                            console.log('stats updated');
+                        }
+                }
+                console.log('txtstats fired');
+
+                return $readability;
+                return $textStatistics;
+            }
+            updateStats();
+
+
+            document.onkeyup =  function(){updateStats()};
+            document.onmouseup =  function(){updateStats()};
+            if(typeof $ != undefined){$('.text-stats').draggable();}
+    </script>
+  </footer>
+  </body>
 
 </html>
 
